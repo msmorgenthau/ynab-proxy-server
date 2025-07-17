@@ -164,7 +164,8 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
       path: ynabPath,
       url: ynabUrl,
       method: req.method,
-      hasAuth: !!req.headers.authorization
+      hasAuth: !!req.headers.authorization,
+      authHeader: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : 'none'
     });
     
     // Handle query parameters including delta sync
@@ -192,9 +193,13 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
         'Authorization': req.headers.authorization,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
         'User-Agent': 'YNAB-TypingMind-Proxy/1.0'
       },
       data: req.body,
+      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
       responseType: 'json',
       transformResponse: [(data) => {
         // Log raw response for debugging
@@ -207,6 +212,18 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
           return data;
         }
       }]
+    });
+    
+    // Log response details
+    console.log('YNAB Response:', {
+      status: ynabResponse.status,
+      statusText: ynabResponse.statusText,
+      headers: {
+        'content-type': ynabResponse.headers['content-type'],
+        'x-rate-limit': ynabResponse.headers['x-rate-limit']
+      },
+      dataType: typeof ynabResponse.data,
+      isHTML: typeof ynabResponse.data === 'string' && ynabResponse.data.includes('<!DOCTYPE')
     });
     
     // Debug: Check if we got HTML
