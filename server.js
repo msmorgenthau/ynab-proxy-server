@@ -182,9 +182,12 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
       url: ynabUrl,
       headers: {
         'Authorization': req.headers.authorization,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      data: req.body
+      data: req.body,
+      maxRedirects: 0,
+      validateStatus: (status) => status < 500
     });
     
     // Store server_knowledge for delta sync
