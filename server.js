@@ -185,9 +185,7 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      data: req.body,
-      maxRedirects: 0,
-      validateStatus: (status) => status < 500
+      data: req.body
     });
     
     // Store server_knowledge for delta sync
