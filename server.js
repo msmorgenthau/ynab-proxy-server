@@ -159,6 +159,14 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
     // Build YNAB API URL
     let ynabUrl = `https://api.youneedabudget.com/v1${ynabPath}`;
     
+    // Debug logging
+    console.log('YNAB Request:', {
+      path: ynabPath,
+      url: ynabUrl,
+      method: req.method,
+      hasAuth: !!req.headers.authorization
+    });
+    
     // Handle query parameters including delta sync
     const queryParams = { ...req.query };
     
@@ -187,6 +195,16 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
       },
       data: req.body
     });
+    
+    // Debug: Check if we got HTML
+    const responseData = ynabResponse.data;
+    if (typeof responseData === 'string' && responseData.includes('<!DOCTYPE')) {
+      console.error('Got HTML response from YNAB!', {
+        url: ynabUrl,
+        status: ynabResponse.status,
+        headers: ynabResponse.headers
+      });
+    }
     
     // Store server_knowledge for delta sync
     if (ynabResponse.data?.data?.server_knowledge) {
