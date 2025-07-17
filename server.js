@@ -191,9 +191,22 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
       headers: {
         'Authorization': req.headers.authorization,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'User-Agent': 'YNAB-TypingMind-Proxy/1.0'
       },
-      data: req.body
+      data: req.body,
+      responseType: 'json',
+      transformResponse: [(data) => {
+        // Log raw response for debugging
+        if (typeof data === 'string' && data.includes('<!DOCTYPE')) {
+          console.log('Raw HTML response from YNAB:', data.substring(0, 200));
+        }
+        try {
+          return JSON.parse(data);
+        } catch (e) {
+          return data;
+        }
+      }]
     });
     
     // Debug: Check if we got HTML
@@ -222,6 +235,18 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
     const ynabRateLimit = ynabResponse.headers['x-rate-limit'];
     if (ynabRateLimit) {
       res.setHeader('X-YNAB-Rate-Limit', ynabRateLimit);
+    }
+    
+    // Check if we got HTML instead of JSON
+    if (typeof ynabResponse.data === 'string' && ynabResponse.data.includes('<!DOCTYPE')) {
+      console.error('YNAB returned HTML instead of JSON');
+      return res.status(502).json({
+        error: {
+          id: 'bad_gateway',
+          name: 'Bad Gateway',
+          detail: 'YNAB API returned HTML instead of JSON. This might be a temporary issue.'
+        }
+      });
     }
     
     res.json(ynabResponse.data);    
