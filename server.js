@@ -165,7 +165,8 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
       url: ynabUrl,
       method: req.method,
       hasAuth: !!req.headers.authorization,
-      authHeader: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : 'none'
+      authHeader: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : 'none',
+      fullAuth: req.headers.authorization // Temporary: log full auth to debug
     });
     
     // Handle query parameters including delta sync
@@ -199,8 +200,11 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
         'User-Agent': 'YNAB-TypingMind-Proxy/1.0'
       },
       data: req.body,
+      timeout: 30000, // 30 second timeout
       validateStatus: (status) => status < 500, // Don't throw on 4xx errors
       responseType: 'json',
+      maxRedirects: 0, // Don't follow redirects
+      maxRedirects: 0, // Don't follow redirects
       transformResponse: [(data) => {
         // Log raw response for debugging
         if (typeof data === 'string' && data.includes('<!DOCTYPE')) {
