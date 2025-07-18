@@ -131,7 +131,8 @@ function setCachedData(userKey, endpoint, data) {
 // YNAB API proxy endpoint
 app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
   try {
-    const ynabPath = req.path.replace('/ynab', '');
+    // Fix: Use params[0] which contains the path after /ynab/
+    const ynabPath = req.params[0] ? `/${req.params[0]}` : '/';
     const userKey = getUserKey(req.headers.authorization);
     const useDelta = req.headers['x-use-delta'] === 'true';
     
@@ -165,8 +166,7 @@ app.use('/ynab/*', rateLimitMiddleware, async (req, res) => {
       url: ynabUrl,
       method: req.method,
       hasAuth: !!req.headers.authorization,
-      authHeader: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : 'none',
-      fullAuth: req.headers.authorization // Temporary: log full auth to debug
+      authHeader: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : 'none'
     });
     
     // Handle query parameters including delta sync
