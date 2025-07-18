@@ -14,14 +14,27 @@ app.use(cors({
   origin: [
     'https://www.typingmind.com',
     'https://typingmind.com',
-    'http://localhost:3000' // for testing
+    'http://localhost:3000', // for testing
+    'http://localhost:*',
+    'file://*' // for local file testing
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Rate-Limit-Count', 'X-Use-Delta']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Rate-Limit-Count', 'X-Use-Delta'],
+  exposedHeaders: ['X-Rate-Limit-Remaining', 'X-Rate-Limit-Reset', 'X-Cache'],
+  maxAge: 86400 // Cache preflight for 24 hours
 }));
 
 app.use(express.json());
+
+// Explicit OPTIONS handler for preflight requests
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Rate-Limit-Count, X-Use-Delta');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(204);
+});
 
 // Rate limit tracking per API key
 const rateLimitMap = new Map();
